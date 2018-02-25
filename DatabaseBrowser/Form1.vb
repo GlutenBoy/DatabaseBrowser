@@ -78,6 +78,19 @@ Public Class Form1
             frmContent.ShowDialog()
         End If
     End Sub
+
+    Private Sub btnDisplayColumns_Click(sender As Object, e As EventArgs) Handles btnDisplayColumns.Click
+        If Me.listSearchResult.SelectedItem IsNot Nothing Then
+            Dim columnsText As String = ""
+
+            For Each column As Column In CType(Me.listSearchResult.SelectedItem, Table).Columns
+                columnsText &= column.ToString & vbNewLine
+            Next
+
+            frmContent.txtContent.Text = columnsText
+            frmContent.ShowDialog()
+        End If
+    End Sub
 #End Region
 
     Private Sub SearchTable(ByVal searchString As String)
@@ -144,25 +157,4 @@ Public Class Form1
         Me.txtSearch.AutoCompleteCustomSource = tableNamesSource
     End Sub
 
-    Private Function ExecuteQuery(ByVal queryString As String, Optional ByVal parameters As Dictionary(Of String, String) = Nothing) As SqlDataReader
-        Dim connection As New SqlConnection(My.Settings.ConnectionString)
-
-        Using command As New SqlCommand(queryString, connection)
-            command.CommandType = CommandType.Text
-
-            If parameters IsNot Nothing Then
-                For Each key As String In parameters.Keys
-                    command.Parameters.AddWithValue(key, parameters(key))
-                Next
-            End If
-
-            connection.Open()
-
-            ' When using CommandBehavior.CloseConnection, the connection will be closed when the   
-            ' IDataReader Is Closed.
-            Dim dataReader As SqlDataReader = command.ExecuteReader(CommandBehavior.CloseConnection)
-
-            Return dataReader
-        End Using
-    End Function
 End Class

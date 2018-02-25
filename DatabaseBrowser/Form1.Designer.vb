@@ -30,6 +30,7 @@ Partial Class Form1
         Me.Label2 = New System.Windows.Forms.Label()
         Me.listStoredProcedures = New System.Windows.Forms.ListBox()
         Me.Label3 = New System.Windows.Forms.Label()
+        Me.btnDisplayColumns = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
         'listSearchResult
@@ -40,7 +41,7 @@ Partial Class Form1
         Me.listSearchResult.IntegralHeight = False
         Me.listSearchResult.Location = New System.Drawing.Point(266, 38)
         Me.listSearchResult.Name = "listSearchResult"
-        Me.listSearchResult.Size = New System.Drawing.Size(248, 577)
+        Me.listSearchResult.Size = New System.Drawing.Size(248, 547)
         Me.listSearchResult.TabIndex = 1
         '
         'txtSearch
@@ -114,11 +115,21 @@ Partial Class Form1
         Me.Label3.TabIndex = 7
         Me.Label3.Text = "Stored Procedures Referencing the Table"
         '
+        'btnDisplayColumns
+        '
+        Me.btnDisplayColumns.Location = New System.Drawing.Point(267, 591)
+        Me.btnDisplayColumns.Name = "btnDisplayColumns"
+        Me.btnDisplayColumns.Size = New System.Drawing.Size(247, 23)
+        Me.btnDisplayColumns.TabIndex = 8
+        Me.btnDisplayColumns.Text = "Display Columns"
+        Me.btnDisplayColumns.UseVisualStyleBackColor = True
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1034, 627)
+        Me.Controls.Add(Me.btnDisplayColumns)
         Me.Controls.Add(Me.Label3)
         Me.Controls.Add(Me.listStoredProcedures)
         Me.Controls.Add(Me.Label2)
@@ -142,4 +153,5 @@ Partial Class Form1
     Friend WithEvents Label2 As Label
     Friend WithEvents listStoredProcedures As ListBox
     Friend WithEvents Label3 As Label
+    Friend WithEvents btnDisplayColumns As Button
 End Class
