@@ -16,54 +16,54 @@ Public Class Form1
     End Sub
 
     Private Sub listSearchResult_SelectedIndexChanged(sender As Object, e As EventArgs) Handles listSearchResult.SelectedIndexChanged
-        LoadLink(Me.listSearchResult.SelectedItem.ToString)
+        LoadLink(CType(Me.listSearchResult.SelectedItem, Table))
     End Sub
 
     Private Sub listLinkTo_DoubleClick(sender As Object, e As EventArgs) Handles listLinkTo.DoubleClick
-        Dim tableName As String
+        Dim table As Table
 
-        tableName = Me.listLinkTo.SelectedItem.ToString
+        table = Me.listLinkTo.SelectedItem
 
         Me.txtSearch.Text = ""
         Me.listSearchResult.Items.Clear()
-        Me.listSearchResult.Items.Add(tableName)
-        LoadLink(tableName)
+        Me.listSearchResult.Items.Add(table)
+        LoadLink(table)
     End Sub
 
     Private Sub listLinkTo_KeyUp(sender As Object, e As KeyEventArgs) Handles listLinkTo.KeyUp
         If e.KeyCode = Keys.Enter Then
-            Dim tableName As String
+            Dim table As Table
 
-            tableName = Me.listLinkTo.SelectedItem.ToString
+            table = Me.listLinkTo.SelectedItem
 
             Me.txtSearch.Text = ""
             Me.listSearchResult.Items.Clear()
-            Me.listSearchResult.Items.Add(tableName)
-            LoadLink(tableName)
+            Me.listSearchResult.Items.Add(Table)
+            LoadLink(Table)
         End If
     End Sub
 
     Private Sub listLinkFrom_DoubleClick(sender As Object, e As EventArgs) Handles listLinkFrom.DoubleClick
-        Dim tableName As String
+        Dim table As Table
 
-        tableName = Me.listLinkFrom.SelectedItem.ToString
+        table = Me.listLinkFrom.SelectedItem
 
         Me.txtSearch.Text = ""
         Me.listSearchResult.Items.Clear()
-        Me.listSearchResult.Items.Add(tableName)
-        LoadLink(tableName)
+        Me.listSearchResult.Items.Add(table)
+        LoadLink(table)
     End Sub
 
     Private Sub listLinkFrom_KeyUp(sender As Object, e As KeyEventArgs) Handles listLinkFrom.KeyUp
         If e.KeyCode = Keys.Enter Then
-            Dim tableName As String
+            Dim table As Table
 
-            tableName = Me.listLinkFrom.SelectedItem.ToString
+            table = Me.listLinkFrom.SelectedItem
 
             Me.txtSearch.Text = ""
             Me.listSearchResult.Items.Clear()
-            Me.listSearchResult.Items.Add(tableName)
-            LoadLink(tableName)
+            Me.listSearchResult.Items.Add(table)
+            LoadLink(table)
         End If
     End Sub
 #End Region
@@ -75,14 +75,16 @@ Public Class Form1
         Me.listSearchResult.Items.Clear()
 
         parameters.Add("@SearchString", "%" & searchString & "%")
-        dataReader = ExecuteQuery("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' AND TABLE_NAME LIKE @SearchString ORDER BY TABLE_NAME", parameters)
+        dataReader = ExecuteQuery("SELECT TABLE_NAME, TABLE_SCHEMA FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' AND TABLE_NAME LIKE @SearchString ORDER BY TABLE_NAME", parameters)
 
         Do While dataReader.Read()
-            Me.listSearchResult.Items.Add(dataReader(0))
+            Dim newTable As New Table(dataReader(0), dataReader(1))
+
+            Me.listSearchResult.Items.Add(newTable)
         Loop
     End Sub
 
-    Private Sub LoadLink(ByVal tableName As String)
+    Private Sub LoadLink(ByVal table As Table)
         Dim dataReaderLinkTo As SqlDataReader
         Dim dataReaderLinkFrom As SqlDataReader
         Dim dataReaderStoredProcedures As SqlDataReader
@@ -93,21 +95,22 @@ Public Class Form1
         Me.listLinkFrom.Items.Clear()
         Me.listStoredProcedures.Items.Clear()
 
-        parameters.Add("@TableName", tableName)
+        parameters.Add("@TableName", table.Name)
 
-        dataReaderLinkFrom = ExecuteQuery("SELECT ku.TABLE_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS c INNER JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cu ON cu.CONSTRAINT_NAME = c.CONSTRAINT_NAME INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku ON ku.CONSTRAINT_NAME = c.UNIQUE_CONSTRAINT_NAME WHERE cu.TABLE_NAME = @TableName", parameters)
-        dataReaderLinkTo = ExecuteQuery("Select FK.TABLE_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS As RC Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As PK On PK.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As FK On FK.CONSTRAINT_NAME = RC.CONSTRAINT_NAME WHERE PK.TABLE_NAME = @TableName", parameters)
+        dataReaderLinkFrom = ExecuteQuery("SELECT ku.TABLE_NAME, ku.TABLE_SCHEMA FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS c INNER JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cu ON cu.CONSTRAINT_NAME = c.CONSTRAINT_NAME INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku ON ku.CONSTRAINT_NAME = c.UNIQUE_CONSTRAINT_NAME WHERE cu.TABLE_NAME = @TableName", parameters)
+        dataReaderLinkTo = ExecuteQuery("SELECT FK.TABLE_NAME, FK.TABLE_SCHEMA FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS As RC Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As PK On PK.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As FK On FK.CONSTRAINT_NAME = RC.CONSTRAINT_NAME WHERE PK.TABLE_NAME = @TableName", parameters)
 
+        'TODO: Option Search with schema name
         parameters = New Dictionary(Of String, String)
-        parameters.Add("@TableName", "%" & tableName & "%")
+        parameters.Add("@TableName", "%" & table.Name & "%")
         dataReaderStoredProcedures = ExecuteQuery("SELECT Name FROM sys.procedures WHERE OBJECT_DEFINITION(OBJECT_ID) LIKE @TableName", parameters)
 
         Do While dataReaderLinkTo.Read()
-            Me.listLinkTo.Items.Add(dataReaderLinkTo(0))
+            Me.listLinkTo.Items.Add(New Table(dataReaderLinkTo(0), dataReaderLinkTo(1)))
         Loop
 
         Do While dataReaderLinkFrom.Read()
-            Me.listLinkFrom.Items.Add(dataReaderLinkFrom(0))
+            Me.listLinkFrom.Items.Add(New Table(dataReaderLinkFrom(0), dataReaderLinkFrom(1)))
         Loop
 
         Do While dataReaderStoredProcedures.Read()
