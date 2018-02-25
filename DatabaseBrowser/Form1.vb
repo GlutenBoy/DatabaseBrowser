@@ -66,6 +66,20 @@ Public Class Form1
             LoadLink(table)
         End If
     End Sub
+
+    Private Sub listStoredProcedures_DoubleClick(sender As Object, e As EventArgs) Handles listStoredProcedures.DoubleClick
+        Dim dataReader As SqlDataReader
+        Dim parameters As New Dictionary(Of String, String)
+
+        parameters.Add("@StoreProcName", Me.listStoredProcedures.SelectedItem.ToString)
+        dataReader = ExecuteQuery("SELECT definition FROM sys.sql_modules WHERE objectproperty(OBJECT_ID, 'IsProcedure') = 1 AND OBJECT_NAME(OBJECT_ID) = @StoreProcName", parameters)
+
+        If dataReader.HasRows Then
+            dataReader.Read()
+            frmContent.txtContent.Text = dataReader(0)
+            frmContent.ShowDialog()
+        End If
+    End Sub
 #End Region
 
     Private Sub SearchTable(ByVal searchString As String)
