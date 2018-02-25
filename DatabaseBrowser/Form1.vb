@@ -70,11 +70,12 @@ Public Class Form1
 
     Private Sub SearchTable(ByVal searchString As String)
         Dim dataReader As SqlDataReader
+        Dim parameters As New Dictionary(Of String, String)
 
         Me.listSearchResult.Items.Clear()
 
-        'TODO: Change this to use a parameter
-        dataReader = ExecuteQuery("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' AND TABLE_NAME LIKE '%" & searchString & "%' ORDER BY TABLE_NAME")
+        parameters.Add("@SearchString", "%" & searchString & "%")
+        dataReader = ExecuteQuery("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' AND TABLE_NAME LIKE @SearchString ORDER BY TABLE_NAME", parameters)
 
         Do While dataReader.Read()
             Me.listSearchResult.Items.Add(dataReader(0))
@@ -85,15 +86,21 @@ Public Class Form1
         Dim dataReaderLinkTo As SqlDataReader
         Dim dataReaderLinkFrom As SqlDataReader
         Dim dataReaderStoredProcedures As SqlDataReader
+        Dim parameters As New Dictionary(Of String, String)
+
 
         Me.listLinkTo.Items.Clear()
         Me.listLinkFrom.Items.Clear()
         Me.listStoredProcedures.Items.Clear()
 
-        'TODO: Change this to use a parameter
-        dataReaderLinkFrom = ExecuteQuery("SELECT ku.TABLE_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS c INNER JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cu ON cu.CONSTRAINT_NAME = c.CONSTRAINT_NAME INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku ON ku.CONSTRAINT_NAME = c.UNIQUE_CONSTRAINT_NAME WHERE cu.TABLE_NAME = '" & tableName & "'")
-        dataReaderLinkTo = ExecuteQuery("Select FK.TABLE_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS As RC Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As PK On PK.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As FK On FK.CONSTRAINT_NAME = RC.CONSTRAINT_NAME WHERE PK.TABLE_NAME = '" & tableName & "'")
-        dataReaderStoredProcedures = ExecuteQuery("SELECT Name FROM sys.procedures WHERE OBJECT_DEFINITION(OBJECT_ID) LIKE '%" & tableName & "%'")
+        parameters.Add("@TableName", tableName)
+
+        dataReaderLinkFrom = ExecuteQuery("SELECT ku.TABLE_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS c INNER JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cu ON cu.CONSTRAINT_NAME = c.CONSTRAINT_NAME INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku ON ku.CONSTRAINT_NAME = c.UNIQUE_CONSTRAINT_NAME WHERE cu.TABLE_NAME = @TableName", parameters)
+        dataReaderLinkTo = ExecuteQuery("Select FK.TABLE_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS As RC Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As PK On PK.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME Join INFORMATION_SCHEMA.TABLE_CONSTRAINTS As FK On FK.CONSTRAINT_NAME = RC.CONSTRAINT_NAME WHERE PK.TABLE_NAME = @TableName", parameters)
+
+        parameters = New Dictionary(Of String, String)
+        parameters.Add("@TableName", "%" & tableName & "%")
+        dataReaderStoredProcedures = ExecuteQuery("SELECT Name FROM sys.procedures WHERE OBJECT_DEFINITION(OBJECT_ID) LIKE @TableName", parameters)
 
         Do While dataReaderLinkTo.Read()
             Me.listLinkTo.Items.Add(dataReaderLinkTo(0))
@@ -122,13 +129,17 @@ Public Class Form1
         Me.txtSearch.AutoCompleteCustomSource = tableNamesSource
     End Sub
 
-    Private Function ExecuteQuery(ByVal queryString As String) As SqlDataReader
+    Private Function ExecuteQuery(ByVal queryString As String, Optional ByVal parameters As Dictionary(Of String, String) = Nothing) As SqlDataReader
         Dim connection As New SqlConnection(_connectionString)
 
         Using command As New SqlCommand(queryString, connection)
             command.CommandType = CommandType.Text
-            'command.Parameters.AddWithValue("@pricePoint", paramValue)
-            'command.Parameters.AddRange(parameters);  
+
+            If parameters IsNot Nothing Then
+                For Each key As String In parameters.Keys
+                    command.Parameters.AddWithValue(key, parameters(key))
+                Next
+            End If
 
             connection.Open()
 
