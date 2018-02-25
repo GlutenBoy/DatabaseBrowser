@@ -2,8 +2,6 @@
 Imports System.Data.SqlClient
 
 Public Class Form1
-    Private _connectionString As String = "Data Source=OFFICE-PC\SQLEXPRESS;Initial Catalog=AdventureWorks2017; Integrated Security=true"
-
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LoadSearchAutoComplete()
     End Sub
@@ -147,7 +145,7 @@ Public Class Form1
     End Sub
 
     Private Function ExecuteQuery(ByVal queryString As String, Optional ByVal parameters As Dictionary(Of String, String) = Nothing) As SqlDataReader
-        Dim connection As New SqlConnection(_connectionString)
+        Dim connection As New SqlConnection(My.Settings.ConnectionString)
 
         Using command As New SqlCommand(queryString, connection)
             command.CommandType = CommandType.Text
